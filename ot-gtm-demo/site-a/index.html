@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Northstar Customer Portal</title>
+
+<!-- Google Tag Manager -->
+<script>
+(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','GTM-REPLACE_ME');
+</script>
+<!-- End Google Tag Manager -->
+
+<script>
+const CONFIG = {
+  tokenApiUrl: "https://REPLACE-WITH-NEW-JWT-API-VERCEL-URL.vercel.app",
+  otherSiteUrl: "https://REPLACE-WITH-NEW-SITE-B-VERCEL-URL.vercel.app"
+};
+
+let signedInUser = null;
+
+function setStatus(message, tone = "neutral") {
+  const el = document.getElementById("statusMessage");
+  if (!el) return;
+  el.textContent = message;
+  el.dataset.tone = tone;
+}
+
+async function signIn(event) {
+  event.preventDefault();
+
+  const button = document.getElementById("signInButton");
+  const email = document.getElementById("email").value.trim().toLowerCase();
+  const accessCode = document.getElementById("accessCode").value;
+
+  button.disabled = true;
+  setStatus("Validating demo credentials...", "neutral");
+
+  try {
+    if (CONFIG.tokenApiUrl.startsWith("REPLACE-")) {
+      throw new Error("JWT API URL is not configured");
+    }
+
+    const response = await fetch(CONFIG.tokenApiUrl + "/api/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      cache: "no-store",
+      body: JSON.stringify({ email, accessCode })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || "Login failed");
+    }
+
+    signedInUser = data.userId;
+
+    /*
+     * IMPORTANT:
+     * The application sets the OneTrust known-user parameters BEFORE
+     * asking GTM to load the OneTrust SDK.
+     */
+    const params = {
+      id: data.userId,
+      token: data.token,
+      isAnonymous: false
+    };
+
+    window.dataSubjectParams = params;
+    window.OneTrust = window.OneTrust || {};
+    window.OneTrust.dataSubjectParams = params;
+
+    /*
+     * GTM listens for this custom event.
+     * The JWT itself is NOT pushed into the GTM dataLayer.
+     */
+    window.dataLayer = window.dataLayer || [];
+    window.dataLayer.push({
+      event: "ot_known_user_ready",
+      userId: data.userId
+    });
+
+    document.getElementById("loginPanel").hidden = true;
+    document.getElementById("accountPanel").hidden = false;
+    document.getElementById("userEmail").textContent = data.userId;
+    document.getElementById("headerUser").textContent = data.userId;
+    document.getElementById("headerUser").hidden = false;
+
+    setStatus(
+      "Signed in. Loading the OneTrust known-user profile...",
+      "success"
+    );
+  } catch (error) {
+    setStatus(error.message, "error");
+  } finally {
+    button.disabled = false;
+    document.getElementById("accessCode").value = "";
+  }
+}
+
+/*
+ * Keep this callback because it is useful for the demo status message.
+ * OneTrust invokes OptanonWrapper after its SDK initializes.
+ */
+function OptanonWrapper() {
+  setStatus(
+    "Known-user profile connected. Active groups: " +
+      (window.OnetrustActiveGroups || "loading"),
+    "success"
+  );
+}
+
+function openPrivacySettings() {
+  if (
+    window.OneTrust &&
+    typeof window.OneTrust.ToggleInfoDisplay === "function"
+  ) {
+    window.OneTrust.ToggleInfoDisplay();
+  } else {
+    setStatus(
+      "Preference Center is not ready yet. Please wait a moment.",
+      "neutral"
+    );
+  }
+}
+
+function signOut() {
+  signedInUser = null;
+  window.dataSubjectParams = undefined;
+
+  if (window.OneTrust) {
+    window.OneTrust.dataSubjectParams = undefined;
+  }
+
+  location.reload();
+}
+
+window.addEventListener("DOMContentLoaded", () => {
+  document.getElementById("loginForm").addEventListener("submit", signIn);
+  document.getElementById("otherSiteLink").href = CONFIG.otherSiteUrl;
+});
+</script>
+
+<style>
+:root{--brand:#163f7a;--pale:#f3f6fc;--ink:#172033;--muted:#607087}
+*{box-sizing:border-box}
+body{margin:0;font-family:Inter,Segoe UI,Arial,sans-serif;background:var(--pale);color:var(--ink)}
+header{background:var(--brand);color:white;padding:18px 6vw;display:flex;justify-content:space-between;align-items:center;box-shadow:0 3px 12px #0002}
+.brand{font-size:20px;font-weight:700}
+.header-user{font-size:13px;background:#ffffff22;padding:8px 12px;border-radius:20px}
+.hero{max-width:1080px;margin:0 auto;padding:54px 24px 22px;display:grid;grid-template-columns:1.25fr .75fr;gap:28px;align-items:center}
+.hero h1{font-size:42px;line-height:1.12;margin:0 0 16px}
+.hero p{font-size:18px;color:var(--muted);line-height:1.6}
+.badge{display:inline-block;color:var(--brand);background:white;border:1px solid #dbe3ee;padding:7px 11px;border-radius:20px;font-size:12px;font-weight:700;margin-bottom:18px}
+.card{background:white;border:1px solid #e2e7ef;border-radius:16px;padding:26px;box-shadow:0 12px 32px #20305012}
+label{display:block;font-size:13px;font-weight:700;margin:14px 0 7px}
+input{width:100%;padding:12px 13px;border:1px solid #cad3df;border-radius:9px;font-size:15px}
+button,.button{border:0;border-radius:9px;padding:12px 16px;font-size:14px;font-weight:700;cursor:pointer;text-decoration:none;display:inline-block}
+.primary{background:var(--brand);color:white;width:100%;margin-top:18px}
+.secondary{background:#edf2f8;color:var(--ink);margin:6px 6px 0 0}
+button:disabled{opacity:.6;cursor:wait}
+.notice{font-size:12px;color:var(--muted);margin-top:14px;line-height:1.5}
+#statusMessage{margin:16px 0 0;padding:11px 12px;border-radius:8px;background:#eef2f7;font-size:13px}
+#statusMessage[data-tone="error"]{background:#fff0f0;color:#9d2424}
+#statusMessage[data-tone="success"]{background:#eaf8f1;color:#176841}
+.features{max-width:1080px;margin:0 auto;padding:18px 24px 60px;display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.feature{background:white;border:1px solid #e2e7ef;border-radius:13px;padding:20px}
+.feature h3{margin:0 0 9px;font-size:16px}
+.feature p{margin:0;color:var(--muted);font-size:14px;line-height:1.5}
+@media(max-width:760px){.hero{grid-template-columns:1fr}.features{grid-template-columns:1fr}.hero h1{font-size:34px}}
+</style>
+</head>
+
+<body>
+<!-- Google Tag Manager (noscript) -->
+<noscript>
+  <iframe src="https://www.googletagmanager.com/ns.html?id=GTM-REPLACE_ME"
+          height="0" width="0" style="display:none;visibility:hidden"></iframe>
+</noscript>
+<!-- End Google Tag Manager (noscript) -->
+
+<header>
+  <div class="brand">Northstar Customer Portal</div>
+  <div id="headerUser" class="header-user" hidden></div>
+</header>
+
+<section class="hero">
+  <div>
+    <span class="badge">LIVE CROSS-DOMAIN CONSENT DEMO</span>
+    <h1>Privacy preferences that follow the signed-in user</h1>
+    <p>Manage your account and privacy choices across connected services.</p>
+  </div>
+
+  <div class="card">
+    <div id="loginPanel">
+      <h2>Sign in to the demo</h2>
+
+      <form id="loginForm">
+        <label for="email">Email address</label>
+        <input id="email" name="email" type="email" autocomplete="username" required />
+
+        <label for="accessCode">Demo access code</label>
+        <input id="accessCode" name="accessCode" type="password" autocomplete="current-password" required />
+
+        <button id="signInButton" class="primary" type="submit">Sign in</button>
+      </form>
+
+      <p class="notice">Controlled demonstration only. Do not enter real credentials.</p>
+    </div>
+
+    <div id="accountPanel" hidden>
+      <h2>Account connected</h2>
+      <p>Signed in as <strong id="userEmail"></strong></p>
+      <button class="secondary" onclick="openPrivacySettings()">Privacy settings</button>
+      <a class="button secondary" id="otherSiteLink" href="#">Visit Travel Services</a>
+      <button class="secondary" onclick="signOut()">Sign out</button>
+    </div>
+
+    <div id="statusMessage" data-tone="neutral">
+      Not signed in. OneTrust known-user sync has not started.
+    </div>
+  </div>
+</section>
+
+<section class="features">
+  <div class="feature">
+    <h3>Secure identity proof</h3>
+    <p>The backend validates the demo credentials and signs a short-lived JWT.</p>
+  </div>
+  <div class="feature">
+    <h3>OneTrust cloud profile</h3>
+    <p>The JWT identifies the same user without sharing browser cookies between domains.</p>
+  </div>
+  <div class="feature">
+    <h3>Bidirectional preferences</h3>
+    <p>Applicable preferences can be updated from either connected property.</p>
+  </div>
+</section>
+</body>
+</html>
