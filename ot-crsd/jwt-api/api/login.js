@@ -31,13 +31,17 @@ module.exports = async function handler(req, res) {
     return res.status(401).json({ error: "Invalid email or access code" });
   }
 
+  // Group-specific namespace so each Consent Group gets its own global profile.
+  const groupNamespace = String(process.env.CONSENT_GROUP_NAMESPACE || "").trim();
+  const scopedIdentifier = groupNamespace ? `${groupNamespace}:${email}` : email;
+
   try {
     const privateKey = Buffer.from(privateKeyB64, "base64").toString("utf8");
-    const token = jwt.sign({ sub: email }, privateKey, {
+    const token = jwt.sign({ sub: scopedIdentifier }, privateKey, {
       algorithm: "RS256",
       expiresIn: "15m"
     });
-    return res.status(200).json({ userId: email, token });
+    return res.status(200).json({ userId: scopedIdentifier, token });
   } catch (error) {
     console.error("JWT generation failed", error);
     return res.status(500).json({ error: "Could not create authentication token" });
