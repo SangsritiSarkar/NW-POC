@@ -33,9 +33,11 @@ module.exports = async function handler(req, res) {
 
   try {
     const privateKey = Buffer.from(privateKeyB64, "base64").toString("utf8");
+    const keyId = String(process.env.JWT_KEY_ID || "");
     const token = jwt.sign({ sub: email }, privateKey, {
       algorithm: "RS256",
-      expiresIn: "15m"
+      expiresIn: "15m",
+      keyid: keyId
     });
     return res.status(200).json({ userId: email, token });
   } catch (error) {
