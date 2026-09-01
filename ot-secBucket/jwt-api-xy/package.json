@@ -1,0 +1,9 @@
+{
+  "name": "jwt-api-xy",
+  "version": "1.0.0",
+  "private": true,
+  "description": "JWT signing API for the X/Y cross-bucket consent demo (separate key pair from A/B)",
+  "dependencies": {
+    "jsonwebtoken": "^9.0.2"
+  }
+}

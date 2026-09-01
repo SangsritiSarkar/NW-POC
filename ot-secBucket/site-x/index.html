@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Aurora Wealth Management</title>
+<script>
+const CONFIG = {
+  oneTrustTestId: "PASTE_XY_ONETRUST_TEST_ID_HERE",
+  tokenApiUrl: "https://onetrust-demo-jwt-api-xy.vercel.app",
+  otherSiteUrl: "https://onetrust-demo-site-y.vercel.app"
+};
+let signedInUser = null;
+let oneTrustStarted = false;
+function setStatus(message, tone = "neutral") {
+  const el = document.getElementById("statusMessage");
+  if (!el) return;
+  el.textContent = message;
+  el.dataset.tone = tone;
+}
+async function signIn(event) {
+  event.preventDefault();
+  const button = document.getElementById("signInButton");
+  const email = document.getElementById("email").value.trim().toLowerCase();
+  const accessCode = document.getElementById("accessCode").value;
+  button.disabled = true;
+  setStatus("Validating demo credentials...", "neutral");
+  try {
+    if (CONFIG.tokenApiUrl.startsWith("PASTE_")) throw new Error("JWT API URL is not configured");
+    const response = await fetch(CONFIG.tokenApiUrl + "/api/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      cache: "no-store",
+      body: JSON.stringify({ email, accessCode })
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || "Login failed");
+    signedInUser = data.userId;
+    const params = { id: data.userId, token: data.token, isAnonymous: false };
+    window.dataSubjectParams = params;
+    window.OneTrust = window.OneTrust || {};
+    window.OneTrust.dataSubjectParams = params;
+    document.getElementById("loginPanel").hidden = true;
+    document.getElementById("accountPanel").hidden = false;
+    document.getElementById("userEmail").textContent = data.userId;
+    document.getElementById("headerUser").textContent = data.userId;
+    document.getElementById("headerUser").hidden = false;
+    setStatus("Signed in. Loading the OneTrust known-user profile...", "success");
+    loadOneTrust();
+  } catch (error) {
+    setStatus(error.message, "error");
+  } finally {
+    button.disabled = false;
+    document.getElementById("accessCode").value = "";
+  }
+}
+function loadOneTrust() {
+  if (oneTrustStarted) return;
+  if (CONFIG.oneTrustTestId.startsWith("PASTE_")) {
+    setStatus("OneTrust Testing CDN ID is not configured.", "error");
+    return;
+  }
+  oneTrustStarted = true;
+  const script = document.createElement("script");
+  script.src = "https://cdn.cookielaw.org/consent/" + CONFIG.oneTrustTestId + "/otSDKStub.js";
+  script.type = "text/javascript";
+  script.charset = "UTF-8";
+  script.setAttribute("data-domain-script", CONFIG.oneTrustTestId);
+  script.onload = () => setStatus("Signed in and OneTrust loaded successfully.", "success");
+  script.onerror = () => setStatus("OneTrust could not be loaded.", "error");
+  document.head.appendChild(script);
+}
+function OptanonWrapper() {
+  setStatus("Known-user profile connected. Active groups: " + (window.OnetrustActiveGroups || "loading"), "success");
+}
+function openPrivacySettings() {
+  if (window.OneTrust && typeof window.OneTrust.ToggleInfoDisplay === "function") {
+    window.OneTrust.ToggleInfoDisplay();
+  } else {
+    setStatus("Preference Center is not ready yet. Please wait a moment.", "neutral");
+  }
+}
+function signOut() {
+  signedInUser = null;
+  window.dataSubjectParams = undefined;
+  if (window.OneTrust) window.OneTrust.dataSubjectParams = undefined;
+  location.reload();
+}
+window.addEventListener("DOMContentLoaded", () => {
+  document.getElementById("loginForm").addEventListener("submit", signIn);
+  document.getElementById("otherSiteLink").href = CONFIG.otherSiteUrl;
+});
+</script>
+<style>
+:root{--brand:#5b2a86;--pale:#f6f2fb;--ink:#1f1430;--muted:#6c5f7e}
+*{box-sizing:border-box} body{margin:0;font-family:Inter,Segoe UI,Arial,sans-serif;background:var(--pale);color:var(--ink)}
+header{background:var(--brand);color:white;padding:18px 6vw;display:flex;justify-content:space-between;align-items:center;box-shadow:0 3px 12px #0002}
+.brand{font-size:20px;font-weight:700} .header-user{font-size:13px;background:#ffffff22;padding:8px 12px;border-radius:20px}
+.hero{max-width:1080px;margin:0 auto;padding:54px 24px 22px;display:grid;grid-template-columns:1.25fr .75fr;gap:28px;align-items:center}
+.hero h1{font-size:42px;line-height:1.12;margin:0 0 16px} .hero p{font-size:18px;color:var(--muted);line-height:1.6}
+.badge{display:inline-block;color:var(--brand);background:white;border:1px solid #e6ddf1;padding:7px 11px;border-radius:20px;font-size:12px;font-weight:700;margin-bottom:18px}
+.card{background:white;border:1px solid #ece5f4;border-radius:16px;padding:26px;box-shadow:0 12px 32px #3a205012}
+label{display:block;font-size:13px;font-weight:700;margin:14px 0 7px} input{width:100%;padding:12px 13px;border:1px solid #d6cbe4;border-radius:9px;font-size:15px}
+button,.button{border:0;border-radius:9px;padding:12px 16px;font-size:14px;font-weight:700;cursor:pointer;text-decoration:none;display:inline-block}
+.primary{background:var(--brand);color:white;width:100%;margin-top:18px} .secondary{background:#f1ebf8;color:var(--ink);margin:6px 6px 0 0} button:disabled{opacity:.6;cursor:wait}
+.notice{font-size:12px;color:var(--muted);margin-top:14px;line-height:1.5} #statusMessage{margin:16px 0 0;padding:11px 12px;border-radius:8px;background:#f2edf8;font-size:13px} #statusMessage[data-tone="error"]{background:#fff0f0;color:#9d2424} #statusMessage[data-tone="success"]{background:#eef7f0;color:#2a6b3f}
+.features{max-width:1080px;margin:0 auto;padding:18px 24px 60px;display:grid;grid-template-columns:repeat(3,1fr);gap:16px} .feature{background:white;border:1px solid #ece5f4;border-radius:13px;padding:20px} .feature h3{margin:0 0 9px;font-size:16px} .feature p{margin:0;color:var(--muted);font-size:14px;line-height:1.5}
+@media(max-width:760px){.hero{grid-template-columns:1fr}.features{grid-template-columns:1fr}.hero h1{font-size:34px}}
+</style>
+</head>
+<body>
+<header><div class="brand">Aurora Wealth Management</div><div id="headerUser" class="header-user" hidden></div></header>
+<section class="hero">
+  <div>
+    <span class="badge">CROSS-BUCKET CONSENT DEMO &middot; BUCKET X/Y</span>
+    <h1>Privacy preferences that follow the signed-in user</h1>
+    <p>Manage your investments and privacy choices across Aurora connected services.</p>
+  </div>
+  <div class="card">
+    <div id="loginPanel">
+      <h2>Sign in to the demo</h2>
+      <form id="loginForm">
+        <label for="email">Email address</label>
+        <input id="email" name="email" type="email" autocomplete="username" required />
+        <label for="accessCode">Demo access code</label>
+        <input id="accessCode" name="accessCode" type="password" autocomplete="current-password" required />
+        <button id="signInButton" class="primary" type="submit">Sign in</button>
+      </form>
+      <p class="notice">Controlled demonstration only. Do not enter real credentials.</p>
+    </div>
+    <div id="accountPanel" hidden>
+      <h2>Account connected</h2>
+      <p>Signed in as <strong id="userEmail"></strong></p>
+      <button class="secondary" onclick="openPrivacySettings()">Privacy settings</button>
+      <a class="button secondary" id="otherSiteLink" href="#">Visit Aurora Health Portal</a>
+      <button class="secondary" onclick="signOut()">Sign out</button>
+    </div>
+    <div id="statusMessage" data-tone="neutral">Not signed in. OneTrust known-user sync has not started.</div>
+  </div>
+</section>
+<section class="features">
+  <div class="feature"><h3>Secure identity proof</h3><p>The backend validates the demo credentials and signs a short-lived JWT.</p></div>
+  <div class="feature"><h3>OneTrust cloud profile</h3><p>The JWT identifies the same user without sharing browser cookies between domains.</p></div>
+  <div class="feature"><h3>Bidirectional preferences</h3><p>Applicable preferences can be updated from either connected property.</p></div>
+</section>
+</body>
+</html>

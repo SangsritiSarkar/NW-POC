@@ -1,0 +1,7 @@
+node_modules/
+private-xy.pem
+public-xy.pem
+*.pem
+.env
+.env.local
+.vercel
