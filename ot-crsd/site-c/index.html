@@ -1,20 +1,150 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <!-- OneTrust Cookies Consent Notice start for nationwide.com -->
-    <script
-      src="https://cdn.cookielaw.org/scripttemplates/otSDKStub.js"
-      type="text/javascript"
-      charset="UTF-8"
-      data-domain-script="01a04816-7288-7cbc-842f-964c334ef2db"
-    ></script>
-    <script type="text/javascript">
-      function OptanonWrapper() {}
-    </script>
-    <!-- OneTrust Cookies Consent Notice end for nationwide.com -->
-    <title>Site-C.com</title>
-  </head>
-  <body></body>
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Site C &middot; Anonymous Cross-Domain Demo</title>
+
+<!-- OneTrust Cookies Consent Notice start (Site C parent) -->
+<script src="https://cdn.cookielaw.org/scripttemplates/otSDKStub.js"
+        type="text/javascript"
+        charset="UTF-8"
+        data-domain-script="01a04816-7288-7cbc-842f-964c334ef2db"></script>
+<script type="text/javascript">function OptanonWrapper() { showActiveGroups(); }</script>
+<!-- OneTrust Cookies Consent Notice end -->
+
+<style>
+  :root{
+    --brand:#0a4d8c;
+    --brand-2:#1274d0;
+    --pale:#eef4fb;
+    --ink:#132133;
+    --muted:#5b6b80;
+    --line:#dde6f1;
+    --ok:#177a4c;
+    --pill:#e8f1fc;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Inter,Segoe UI,Arial,sans-serif;background:var(--pale);color:var(--ink)}
+  a{color:var(--brand-2)}
+  header{
+    background:linear-gradient(120deg,var(--brand),var(--brand-2));
+    color:#fff;padding:16px 6vw;display:flex;align-items:center;justify-content:space-between;
+    box-shadow:0 4px 18px #0a4d8c33;
+  }
+  .brand{display:flex;align-items:center;gap:12px;font-weight:800;font-size:19px;letter-spacing:.2px}
+  .brand .dot{width:30px;height:30px;border-radius:9px;background:#ffffff22;display:grid;place-items:center;font-size:15px}
+  .tag{font-size:12px;font-weight:700;background:#ffffff22;padding:7px 12px;border-radius:20px}
+
+  .wrap{max-width:1060px;margin:0 auto;padding:44px 24px 70px}
+  .hero{
+    background:#fff;border:1px solid var(--line);border-radius:20px;padding:34px;
+    box-shadow:0 16px 40px #10233f12;display:grid;grid-template-columns:1.3fr .7fr;gap:30px;align-items:center;
+  }
+  .eyebrow{display:inline-block;background:var(--pill);color:var(--brand);font-weight:800;font-size:12px;
+    padding:7px 12px;border-radius:20px;margin-bottom:14px;letter-spacing:.4px}
+  h1{margin:0 0 12px;font-size:38px;line-height:1.12}
+  .lead{color:var(--muted);font-size:17px;line-height:1.6;margin:0}
+
+  .sitecard{
+    background:linear-gradient(160deg,#f4f9ff,#e7f0fb);border:1px solid var(--line);border-radius:16px;
+    padding:22px;text-align:center;
+  }
+  .sitecard .big{font-size:44px;font-weight:900;color:var(--brand);line-height:1}
+  .sitecard .sub{color:var(--muted);font-size:13px;margin-top:6px}
+
+  .row{display:flex;flex-wrap:wrap;gap:12px;margin-top:26px}
+  .btn{border:0;border-radius:11px;padding:13px 20px;font-size:14px;font-weight:800;cursor:pointer;
+    text-decoration:none;display:inline-flex;align-items:center;gap:9px;transition:transform .05s ease}
+  .btn:active{transform:translateY(1px)}
+  .btn.primary{background:var(--brand);color:#fff}
+  .btn.ghost{background:#fff;color:var(--brand);border:1.5px solid var(--brand)}
+  .btn .arrow{font-size:16px}
+
+  .panel{
+    margin-top:26px;background:#fff;border:1px solid var(--line);border-radius:16px;padding:22px 24px;
+    box-shadow:0 10px 30px #10233f0d;
+  }
+  .panel h3{margin:0 0 4px;font-size:16px}
+  .panel p{margin:0;color:var(--muted);font-size:14px;line-height:1.55}
+  .state{
+    margin-top:16px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;
+    background:#0f1c2e;color:#7ee3b0;border-radius:10px;padding:14px 16px;word-break:break-word;line-height:1.5;
+  }
+  .state b{color:#9fd0ff}
+
+  .steps{margin-top:26px;display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  .step{background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px}
+  .step .n{width:26px;height:26px;border-radius:50%;background:var(--brand);color:#fff;display:grid;place-items:center;
+    font-size:13px;font-weight:800;margin-bottom:10px}
+  .step h4{margin:0 0 6px;font-size:14px}
+  .step p{margin:0;color:var(--muted);font-size:13px;line-height:1.5}
+
+  footer{max-width:1060px;margin:0 auto;padding:0 24px 50px;color:var(--muted);font-size:12px;text-align:center}
+
+  @media(max-width:820px){.hero{grid-template-columns:1fr}.steps{grid-template-columns:1fr}h1{font-size:30px}}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand"><span class="dot">C</span> Northbank Demo &middot; Site C</div>
+  <span class="tag">ANONYMOUS CROSS-DOMAIN &middot; BUCKET C/D</span>
+</header>
+
+<div class="wrap">
+  <section class="hero">
+    <div>
+      <span class="eyebrow">COOKIE-BASED CONSENT SHARING</span>
+      <h1>Set your privacy choices on Site&nbsp;C</h1>
+      <p class="lead">Make your cookie selections here, then use the button to travel to Site&nbsp;D.
+      Because both sites belong to the same consent group, your anonymous choice should
+      follow you across the domain &mdash; no login required.</p>
+
+      <div class="row">
+        <button class="btn primary" onclick="openPreferences()">Manage cookie settings</button>
+        <!-- OneTrust auto-decorates this link with the consent handoff -->
+        <a class="btn ghost" href="https://onetrust-demo-site-d.vercel.app">
+          Continue to Site D <span class="arrow">&rarr;</span>
+        </a>
+      </div>
+    </div>
+
+    <div class="sitecard">
+      <div class="big">C</div>
+      <div class="sub">Parent domain in the C/D group</div>
+    </div>
+  </section>
+
+  <div class="panel">
+    <h3>Live consent state</h3>
+    <p>This updates from OneTrust once the banner loads or a choice is confirmed.</p>
+    <div class="state" id="stateBox"><b>Status:</b> waiting for OneTrust to initialise&hellip;</div>
+  </div>
+
+  <div class="steps">
+    <div class="step"><div class="n">1</div><h4>Choose here</h4><p>Accept, reject, or customise your cookie categories on Site&nbsp;C.</p></div>
+    <div class="step"><div class="n">2</div><h4>Click the link</h4><p>Use <b>Continue to Site D</b> so OneTrust can pass the consent in the URL.</p></div>
+    <div class="step"><div class="n">3</div><h4>Verify on D</h4><p>Site&nbsp;D should load with the same choice &mdash; matching <code>consentId</code>.</p></div>
+  </div>
+</div>
+
+<footer>Controlled demonstration only &middot; Anonymous cookie-based cross-domain consent (Consent Group: C/D)</footer>
+
+<script>
+  function openPreferences(){
+    if (window.OneTrust && typeof window.OneTrust.ToggleInfoDisplay === "function") {
+      window.OneTrust.ToggleInfoDisplay();
+    }
+  }
+  function showActiveGroups(){
+    var box = document.getElementById("stateBox");
+    if(!box) return;
+    var groups = window.OnetrustActiveGroups || "(none yet)";
+    box.innerHTML = "<b>Site:</b> C &nbsp;|&nbsp; <b>Active groups:</b> " + groups +
+      "<br><b>Tip:</b> open DevTools &rarr; Application &rarr; Cookies and note the <b>consentId</b> in OptanonConsent.";
+  }
+  // Refresh state shortly after load in case OptanonWrapper fired early
+  window.addEventListener("load", function(){ setTimeout(showActiveGroups, 1200); });
+</script>
+</body>
 </html>
