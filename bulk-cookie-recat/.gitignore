@@ -1,0 +1,11 @@
+# NEVER commit these
+.env
+results.csv
+*.log
+
+__pycache__/
+*.pyc
+.venv/
+venv/
+~$*.xlsx
+.DS_Store
