@@ -5,13 +5,12 @@
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>Graphite Member Portal - Account</title>
     <script>
+      // GTM now injects the OneTrust SDK, so no OneTrust ID lives in the page.
       const CONFIG = {
-        oneTrustTestId: "01a0d3ac-a9d5-71e0-b524-af79d267b48d",
         otherSiteUrl: "https://ot-demo-site-p.vercel.app",
         landingPageUrl: "index.html",
       };
       const HANDOFF = "pqKnownUserHandoff";
-      let oneTrustStarted = false;
       function setStatus(m, t = "neutral") {
         const e = document.getElementById("statusMessage");
         if (e) {
@@ -26,24 +25,6 @@
         } catch {
           return null;
         }
-      }
-      function loadKnownUserOneTrust() {
-        if (oneTrustStarted) return;
-        if (CONFIG.oneTrustTestId.startsWith("PASTE_")) {
-          setStatus("OneTrust Testing CDN ID is not configured.", "error");
-          return;
-        }
-        oneTrustStarted = true;
-        const s = document.createElement("script");
-        s.src =
-          "https://cdn.cookielaw.org/consent/" +
-          CONFIG.oneTrustTestId +
-          "/otSDKStub.js";
-        s.type = "text/javascript";
-        s.charset = "UTF-8";
-        s.setAttribute("data-domain-script", CONFIG.oneTrustTestId);
-        s.onerror = () => setStatus("OneTrust could not be loaded.", "error");
-        document.head.appendChild(s);
       }
       function OptanonWrapper() {
         setStatus(
@@ -70,20 +51,33 @@
           location.replace(CONFIG.landingPageUrl);
           return;
         }
-        const p = { id: d.id, token: d.token, isAnonymous: false };
-        window.dataSubjectParams = p;
-        window.OneTrust = window.OneTrust || {};
-        window.OneTrust.dataSubjectParams = p;
+        // dataSubjectParams is NOT set here any more. The GTM tag reads the
+        // same sessionStorage entry and sets it before injecting the SDK,
+        // which is the only way to guarantee the required ordering.
         document.getElementById("userEmail").textContent = d.id;
         document.getElementById("headerUser").textContent = d.id;
         document.getElementById("otherSiteLink").href = CONFIG.otherSiteUrl;
         setStatus(
-          "UID and JWT received. Loading known-user OneTrust...",
+          "UID and JWT handed to GTM. Loading known-user OneTrust...",
           "success",
         );
-        loadKnownUserOneTrust();
       });
     </script>
+
+    <!-- Google Tag Manager -->
+    <script>
+      (function (w, d, s, l, i) {
+        w[l] = w[l] || [];
+        w[l].push({ "gtm.start": new Date().getTime(), event: "gtm.js" });
+        var f = d.getElementsByTagName(s)[0],
+          j = d.createElement(s),
+          dl = l != "dataLayer" ? "&l=" + l : "";
+        j.async = true;
+        j.src = "https://www.googletagmanager.com/gtm.js?id=" + i + dl;
+        f.parentNode.insertBefore(j, f);
+      })(window, document, "script", "dataLayer", "GTM-XXXXXXX");
+    </script>
+    <!-- End Google Tag Manager -->
     <style>
       :root {
         --brand: #5b5bd6;
@@ -268,6 +262,17 @@
     </style>
   </head>
   <body>
+    <!-- Google Tag Manager (noscript) -->
+    <noscript
+      ><iframe
+        src="https://www.googletagmanager.com/ns.html?id=GTM-XXXXXXX"
+        height="0"
+        width="0"
+        style="display: none; visibility: hidden"
+      ></iframe
+    ></noscript>
+    <!-- End Google Tag Manager (noscript) -->
+
     <header>
       <div class="brand">Graphite Member Portal</div>
       <div id="headerUser" class="header-user"></div>

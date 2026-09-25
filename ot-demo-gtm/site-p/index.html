@@ -5,37 +5,18 @@
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>Ember Financial Services</title>
     <script>
+      // GTM now injects the OneTrust SDK, so no OneTrust ID lives in the page.
       const CONFIG = {
-        oneTrustTestId: "01a0d3ac-a9d5-71e0-b524-af79d267b48d",
         tokenApiUrl: "https://ot-jwt-pq.vercel.app",
         accountPageUrl: "account.html",
       };
       const HANDOFF = "pqKnownUserHandoff";
-      let oneTrustStarted = false;
       function setStatus(m, t = "neutral") {
         const e = document.getElementById("statusMessage");
         if (e) {
           e.textContent = m;
           e.dataset.tone = t;
         }
-      }
-      function loadAnonymousOneTrust() {
-        if (oneTrustStarted) return;
-        if (CONFIG.oneTrustTestId.startsWith("PASTE_")) {
-          setStatus("OneTrust Testing CDN ID is not configured.", "error");
-          return;
-        }
-        oneTrustStarted = true;
-        const s = document.createElement("script");
-        s.src =
-          "https://cdn.cookielaw.org/consent/" +
-          CONFIG.oneTrustTestId +
-          "/otSDKStub.js";
-        s.type = "text/javascript";
-        s.charset = "UTF-8";
-        s.setAttribute("data-domain-script", CONFIG.oneTrustTestId);
-        s.onerror = () => setStatus("OneTrust could not be loaded.", "error");
-        document.head.appendChild(s);
       }
       function OptanonWrapper() {
         setStatus(
@@ -81,10 +62,24 @@
       addEventListener("DOMContentLoaded", () => {
         sessionStorage.removeItem(HANDOFF);
         document.getElementById("loginForm").addEventListener("submit", signIn);
-        setStatus("Browsing anonymously. Loading the OneTrust banner...");
-        loadAnonymousOneTrust();
+        setStatus("Browsing anonymously. GTM is loading the OneTrust banner...");
       });
     </script>
+
+    <!-- Google Tag Manager -->
+    <script>
+      (function (w, d, s, l, i) {
+        w[l] = w[l] || [];
+        w[l].push({ "gtm.start": new Date().getTime(), event: "gtm.js" });
+        var f = d.getElementsByTagName(s)[0],
+          j = d.createElement(s),
+          dl = l != "dataLayer" ? "&l=" + l : "";
+        j.async = true;
+        j.src = "https://www.googletagmanager.com/gtm.js?id=" + i + dl;
+        f.parentNode.insertBefore(j, f);
+      })(window, document, "script", "dataLayer", "GTM-XXXXXXX");
+    </script>
+    <!-- End Google Tag Manager -->
     <style>
       :root {
         --brand: #0f9488;
@@ -269,6 +264,17 @@
     </style>
   </head>
   <body>
+    <!-- Google Tag Manager (noscript) -->
+    <noscript
+      ><iframe
+        src="https://www.googletagmanager.com/ns.html?id=GTM-XXXXXXX"
+        height="0"
+        width="0"
+        style="display: none; visibility: hidden"
+      ></iframe
+    ></noscript>
+    <!-- End Google Tag Manager (noscript) -->
+
     <header><div class="brand">Ember Financial Services</div></header>
     <section class="hero">
       <div>
