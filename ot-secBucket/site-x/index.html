@@ -8,7 +8,15 @@
 const CONFIG = {
   oneTrustTestId: "01a05c00-b92c-78b9-8549-616f5e557550",
   tokenApiUrl: "https://onetrust-demo-sec-jwt-api.vercel.app",
-  otherSiteUrl: "https://onetrust-demo-site-y.vercel.app"
+  otherSiteUrl: "https://onetrust-demo-site-y.vercel.app",
+
+  /* ---- ADDED: which privacy policy each hostname should link to ---------
+   * Keep this block IDENTICAL in site-x and site-y. The script decides at
+   * runtime by reading window.location.hostname, which is the whole point. */
+  privacyPolicyMap: {
+    "onetrust-demo-site-x.vercel.app": "https://onetrust-demo-site-x.vercel.app/privacy-x",
+    "onetrust-demo-site-y.vercel.app": "https://onetrust-demo-site-y.vercel.app/privacy-y"
+  }
 };
 let signedInUser = null;
 let oneTrustStarted = false;
@@ -72,7 +80,132 @@ function loadOneTrust() {
 }
 function OptanonWrapper() {
   setStatus("Known-user profile connected. Active groups: " + (window.OnetrustActiveGroups || "loading"), "success");
+
+  /* ---- ADDED: fix the privacy link as soon as the banner renders --------
+   * OptanonWrapper is OneTrust's own callback, so the banner already exists
+   * by the time this runs. watchForPrivacyLink then handles the preference
+   * centre, which OneTrust does not build until the user opens it. */
+  applyPrivacyLink();
+  watchForPrivacyLink();
 }
+
+/* ==========================================================================
+ * PER-DOMAIN PRIVACY POLICY LINK
+ * Rewrites the OneTrust privacy-policy anchor based on which hostname the
+ * banner is running on. Both sites share ONE OneTrust script ID, so this is
+ * the only way to show two different privacy policies from one template.
+ * ========================================================================== */
+
+/* The Cookie policy URL currently set in the OneTrust TEMPLATE.
+ * Used as the fallback AND as the token for finding the right anchor.
+ * Must match the template exactly, including https:// and any trailing slash. */
+var TEMPLATE_DEFAULT_URL = "https://onetrust-demo-site-y.vercel.app/privacy-y";
+
+/* Set to false before this pattern goes anywhere near Nationwide. */
+var PRIVACY_LINK_DEBUG = true;
+
+/* Only look inside OneTrust's own containers, never the host page. */
+var OT_CONTAINERS = [
+  "#onetrust-banner-sdk",   // the cookie banner
+  "#onetrust-pc-sdk",       // the preference centre
+  "#ot-sdk-cookie-policy"   // embedded cookie policy widget
+];
+
+var privacyLinkObserver = null;
+
+/* Which URL should THIS hostname show? */
+function resolvePrivacyUrl() {
+  var host = (window.location.hostname || "").toLowerCase();
+  var map = (CONFIG && CONFIG.privacyPolicyMap) || {};
+
+  if (map[host]) return map[host];
+
+  // tolerate a www. prefix mismatch in either direction
+  if (host.indexOf("www.") === 0 && map[host.slice(4)]) return map[host.slice(4)];
+  if (map["www." + host]) return map["www." + host];
+
+  if (PRIVACY_LINK_DEBUG) {
+    console.warn("[OT privacy link] UNMAPPED HOST: " + host +
+                 " - falling back to the template default. " +
+                 "At Nationwide this is how a new domain silently gets the wrong policy.");
+  }
+  return TEMPLATE_DEFAULT_URL;
+}
+
+/* Is this anchor the privacy-policy link?
+ * Matched on href rather than CSS class, because the class differs between the
+ * banner and the preference centre. Matching on href also guarantees we never
+ * touch the GPC link to globalprivacycontrol.org. */
+function isPrivacyAnchor(a) {
+  var raw      = (a.getAttribute("href") || "").toLowerCase();
+  var resolved = (a.href || "").toLowerCase();
+  var token    = TEMPLATE_DEFAULT_URL.toLowerCase();
+
+  if (raw === token || resolved === token) return true;
+
+  // Recognise a link already rewritten, so repeat runs stay stable.
+  var map = (CONFIG && CONFIG.privacyPolicyMap) || {};
+  for (var h in map) {
+    if (!map.hasOwnProperty(h)) continue;
+    var u = map[h].toLowerCase();
+    if (raw === u || resolved === u) return true;
+  }
+  return false;
+}
+
+/* Find the privacy anchors and point them at the right URL. */
+function applyPrivacyLink() {
+  var url = resolvePrivacyUrl();
+  var found = 0, changed = 0;
+
+  for (var c = 0; c < OT_CONTAINERS.length; c++) {
+    var root = document.querySelector(OT_CONTAINERS[c]);
+    if (!root) continue;
+
+    var anchors = root.getElementsByTagName("a");
+    for (var i = 0; i < anchors.length; i++) {
+      var a = anchors[i];
+      if (!isPrivacyAnchor(a)) continue;
+      found++;
+
+      // Always ensure the link opens in a new tab. The preference centre link
+      // in the template has no target="_blank", so without this it navigates
+      // the user away in the middle of setting their consent.
+      a.setAttribute("target", "_blank");
+      a.setAttribute("rel", "noopener noreferrer");
+
+      if (a.getAttribute("href") === url) continue;   // href already correct
+      a.setAttribute("href", url);
+      changed++;
+    }
+  }
+
+  if (PRIVACY_LINK_DEBUG && found > 0) {
+    console.log("[OT privacy link] host=" + window.location.hostname +
+                " | matched=" + found +
+                " | rewritten=" + changed +
+                " | url=" + url);
+  }
+  return found;
+}
+
+/* OneTrust builds the preference centre only when the user opens it, which is
+ * long after OptanonWrapper fires. Watch for it and re-apply. */
+function watchForPrivacyLink() {
+  if (privacyLinkObserver || !window.MutationObserver) return;
+
+  privacyLinkObserver = new MutationObserver(function (mutations) {
+    for (var i = 0; i < mutations.length; i++) {
+      if (mutations[i].addedNodes && mutations[i].addedNodes.length) {
+        applyPrivacyLink();
+        return;
+      }
+    }
+  });
+
+  privacyLinkObserver.observe(document.body, { childList: true, subtree: true });
+}
+
 function openPrivacySettings() {
   if (window.OneTrust && typeof window.OneTrust.ToggleInfoDisplay === "function") {
     window.OneTrust.ToggleInfoDisplay();
