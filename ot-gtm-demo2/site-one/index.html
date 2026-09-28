@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Site One | Consent demo</title>
+  <script>
+    // Application code: authenticate and keep a same-tab demo handoff.
+    // GTM, not this page, sets OneTrust identity and injects the SDK.
+    const CONFIG = {
+      apiBase: "https://REPLACE-WITH-YOUR-JWT-API.vercel.app",
+      handoffKey: "scenarioBKnownUserHandoff",
+      otherSiteUrl: "https://REPLACE-WITH-SITE-TWO.vercel.app"
+    };
+
+    function setStatus(message, tone = "neutral") {
+      const el = document.getElementById("status");
+      if (el) { el.textContent = message; el.dataset.tone = tone; }
+    }
+
+    function readSession() {
+      try {
+        const d = JSON.parse(sessionStorage.getItem(CONFIG.handoffKey) || "null");
+        if (d && typeof d.id === "string" && d.id &&
+            typeof d.token === "string" && d.token &&
+            Number.isFinite(d.expiresAt) && Date.now() < d.expiresAt - 30000) {
+          return d;
+        }
+      } catch (e) { /* No usable handoff. */ }
+      sessionStorage.removeItem(CONFIG.handoffKey);
+      return null;
+    }
+
+    // Keep the callback available before the GTM container starts.
+    function OptanonWrapper() {
+      setStatus("OneTrust is ready. Review your privacy settings.", "success");
+    }
+
+    async function signIn(event) {
+      event.preventDefault();
+      const button = document.getElementById("signInButton");
+      button.disabled = true;
+      setStatus("Checking demo credentials...");
+      try {
+        if (CONFIG.apiBase.includes("REPLACE-WITH")) {
+          throw new Error("Configure the JWT API URL before testing.");
+        }
+        const email = document.getElementById("email").value.trim().toLowerCase();
+        const accessCode = document.getElementById("accessCode").value;
+        const response = await fetch(CONFIG.apiBase + "/api/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          cache: "no-store",
+          body: JSON.stringify({ email, accessCode })
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || "Sign-in failed.");
+        if (!data.userId || !data.token || !Number.isFinite(data.expiresAt) ||
+            Date.now() >= data.expiresAt - 30000) {
+          throw new Error("The API did not return a valid UID, JWT and expiry.");
+        }
+        sessionStorage.setItem(CONFIG.handoffKey, JSON.stringify({
+          id: data.userId, token: data.token, expiresAt: data.expiresAt
+        }));
+        // No navigation to another page. Reload this SAME URL.
+        window.location.reload();
+      } catch (error) {
+        setStatus(error.message, "error");
+        button.disabled = false;
+        document.getElementById("accessCode").value = "";
+      }
+    }
+
+    function signOut() {
+      sessionStorage.removeItem(CONFIG.handoffKey);
+      window.location.reload();
+    }
+
+    function openPrivacySettings() {
+      if (window.OneTrust && typeof window.OneTrust.ToggleInfoDisplay === "function") {
+        window.OneTrust.ToggleInfoDisplay();
+      } else {
+        setStatus("Privacy settings are still loading.");
+      }
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+      document.getElementById("loginForm").addEventListener("submit", signIn);
+      document.getElementById("otherSiteLink").href = CONFIG.otherSiteUrl;
+      const session = readSession();
+      document.getElementById("loginPanel").hidden = Boolean(session);
+      document.getElementById("signedInPanel").hidden = !session;
+      if (session) {
+        document.getElementById("userId").textContent = session.id;
+        setStatus("Signed in on this page. GTM is loading the known-user profile.");
+      } else {
+        setStatus("Browsing anonymously. GTM is loading OneTrust.");
+      }
+    });
+  </script>
+  <!-- GTM head snippet: replace GTM-XXXXXXX in both places. -->
+  <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+  new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+  j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+  'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+  })(window,document,'script','dataLayer','GTM-XXXXXXX');</script>
+  <style>
+    :root { --accent: #285c9c; --bg: #edf4ff; --ink: #172033; }
+    * { box-sizing: border-box; }
+    body { margin: 0; font: 16px system-ui, sans-serif; background: var(--bg); color: var(--ink); }
+    header { background: var(--accent); color: white; padding: 18px max(24px, calc((100vw - 900px)/2)); font-weight: 700; }
+    main { max-width: 900px; margin: 54px auto; padding: 0 24px; }
+    .card { max-width: 560px; background: white; border-radius: 16px; padding: 26px; box-shadow: 0 8px 28px #0001; }
+    label { display: block; margin: 15px 0 6px; font-weight: 600; }
+    input { display: block; width: 100%; padding: 12px; border: 1px solid #aab6c3; border-radius: 8px; }
+    button, .link { display: inline-block; border: 0; border-radius: 8px; background: var(--accent); color: white; padding: 11px 15px; margin: 15px 8px 0 0; text-decoration: none; cursor: pointer; font: inherit; }
+    #status { padding: 12px; background: white; border-radius: 8px; max-width: 560px; }
+    #status[data-tone="error"] { color: #a11b24; }
+    [hidden] { display: none !important; }
+  </style>
+</head>
+<body>
+  <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-XXXXXXX"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+  <header>Site One</header>
+  <main>
+    <h1>Privacy choices before and after sign-in</h1>
+    <p>Stay on this page when signing in. The page reloads to initialize OneTrust with the signed-in identity.</p>
+    <div class="card">
+      <section id="loginPanel">
+        <h2>Sign in</h2>
+        <form id="loginForm">
+          <label for="email">Demo email</label><input id="email" type="email" autocomplete="username" required>
+          <label for="accessCode">Demo access code</label><input id="accessCode" type="password" autocomplete="current-password" required>
+          <button id="signInButton" type="submit">Sign in</button>
+        </form>
+        <p>Controlled demo only. Do not enter real credentials.</p>
+      </section>
+      <section id="signedInPanel" hidden>
+        <h2>Signed-in view</h2>
+        <p>UID: <strong id="userId"></strong></p>
+        <button type="button" onclick="signOut()">Sign out</button>
+        <a id="otherSiteLink" class="link" href="#">Visit the other demo site</a>
+      </section>
+      <button type="button" onclick="openPrivacySettings()">Privacy settings</button>
+    </div>
+    <p id="status" role="status">Preparing OneTrust...</p>
+  </main>
+</body>
+</html>
