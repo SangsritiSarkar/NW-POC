@@ -8,9 +8,9 @@
     // Application code: authenticate and keep a same-tab demo handoff.
     // GTM, not this page, sets OneTrust identity and injects the SDK.
     const CONFIG = {
-      apiBase: "https://REPLACE-WITH-YOUR-JWT-API.vercel.app",
+      apiBase: "https://ot-gtm-jwt-sites.vercel.app",
       handoffKey: "scenarioBKnownUserHandoff",
-      otherSiteUrl: "https://REPLACE-WITH-SITE-ONE.vercel.app"
+      otherSiteUrl: "https://ot-gtm-site-one.vercel.app"
     };
 
     function setStatus(message, tone = "neutral") {

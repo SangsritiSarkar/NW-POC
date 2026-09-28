@@ -8,9 +8,9 @@
     // Application code: authenticate and keep a same-tab demo handoff.
     // GTM, not this page, sets OneTrust identity and injects the SDK.
     const CONFIG = {
-      apiBase: "https://REPLACE-WITH-YOUR-JWT-API.vercel.app",
+      apiBase: "https://ot-gtm-jwt-sites.vercel.app",
       handoffKey: "scenarioBKnownUserHandoff",
-      otherSiteUrl: "https://REPLACE-WITH-SITE-TWO.vercel.app"
+      otherSiteUrl: "https://ot-gtm-site-two.vercel.app"
     };
 
     function setStatus(message, tone = "neutral") {
@@ -103,7 +103,7 @@
   new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
   j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
   'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-  })(window,document,'script','dataLayer','GTM-XXXXXXX');</script>
+  })(window,document,'script','dataLayer','GTM-P8L3LBXT');</script>
   <style>
     :root { --accent: #285c9c; --bg: #edf4ff; --ink: #172033; }
     * { box-sizing: border-box; }
@@ -120,7 +120,7 @@
   </style>
 </head>
 <body>
-  <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-XXXXXXX"
+  <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-P8L3LBXT"
     height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   <header>Site One</header>
   <main>
